@@ -2,10 +2,10 @@
 
 namespace RoundRobinConsole
 {
-	internal class Tree
+	internal class NTree
 	{
 		public readonly int N;
-		public List<TreeNode> Roots;
+		public List<NTreeNode> Roots;
 		public int RootCount => Roots.Count;
 		private readonly int _numWidth;
 		private readonly string _spacing;
@@ -16,7 +16,7 @@ namespace RoundRobinConsole
 		/// </summary>
 		public bool ToStringModeIsTall = true;
 
-		public Tree(int n)
+		public NTree(int n)
 		{
 			N = n;
 			_numWidth = N / 10 + 1;
@@ -27,18 +27,18 @@ namespace RoundRobinConsole
 			Roots = GenerateTreeRecursive(N, 0);
 		}
 
-		public List<TreeNode> GenerateTreeRecursive(int n, int depth)
+		public List<NTreeNode> GenerateTreeRecursive(int n, int depth)
 		{
 			if (depth >= n)
 			{
-				return new List<TreeNode>();
+				return new List<NTreeNode>();
 			}
 
-			var nodes = new List<TreeNode>();
+			var nodes = new List<NTreeNode>();
 			for (int i = 0; i < n; ++i)
 			{
 				var children = GenerateTreeRecursive(n, depth + 1);
-				TreeNode node = new TreeNode(i, depth, children);
+				NTreeNode node = new NTreeNode(i, depth, children);
 				nodes.Add(node);
 			}
 			return nodes;
@@ -65,7 +65,7 @@ namespace RoundRobinConsole
 
 			var sb = new StringBuilder();
 
-			LinkedList<TreeNode> queue = new LinkedList<TreeNode>();
+			LinkedList<NTreeNode> queue = new LinkedList<NTreeNode>();
 			foreach (var root in Roots)
 			{
 				queue.AddLast(root);
@@ -119,7 +119,7 @@ namespace RoundRobinConsole
 
 			var sb = new StringBuilder();
 
-			var queue = new Queue<TreeNode>();
+			var queue = new Queue<NTreeNode>();
 			foreach (var root in Roots)
 			{
 				queue.Enqueue(root);
@@ -158,33 +158,6 @@ namespace RoundRobinConsole
 			}
 
 			return sb.ToString();
-		}
-	}
-
-	internal class TreeNode
-	{
-		public int Value;
-		public int Depth;
-		public List<TreeNode> Children;
-		public int ChildCount => Children.Count;
-
-		public TreeNode(int data, int depth)
-		{
-			Value = data;
-			Depth = depth;
-			Children = new List<TreeNode>();
-		}
-
-		public TreeNode(int data, int depth, List<TreeNode>? children)
-		{
-			Value = data;
-			Depth = depth;
-			Children = children ?? new List<TreeNode>();
-		}
-
-		public override string ToString()
-		{
-			return Value.ToString();
 		}
 	}
 }
