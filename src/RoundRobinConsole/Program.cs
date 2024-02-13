@@ -8,12 +8,11 @@ namespace RoundRobinConsole
 		private static void Main(string[] args)
 		{
 			Console.WriteLine("Round Robin Output:");
-			//var bracket = new RoundRobin();
-			//bracket.Generate(2, 6, 2, 0);
+			var bracket = new RoundRobin();
+			bracket.Generate(2, 4, 2, 0);
 
-			var tree = new Tree(3);
-			//tree.ToStringModeIsTall = false;
-			Console.Write(tree.ToString());
+			//var tree = new Tree(3);
+			//Console.Write(tree.ToString());
 		}
 	}
 
@@ -27,7 +26,7 @@ namespace RoundRobinConsole
 		private int _locationCount => Locations.Count;
 		private int _roundCount => Rounds.Count;
 		private int _maxRoundCount = 0;
-		public int MatchesRequired = 0;
+		public int GamesRequired = 0;
 
 		/// <summary>
 		/// Make a round robin tournament bracket.
@@ -38,18 +37,18 @@ namespace RoundRobinConsole
 		/// If this is greater than 0, then it will produce sub-rounds where the same location needs to be used multiple times in one round.
 		/// </param>
 		/// <returns><see langword="true"/> if the bracket was generated successfully.</returns>
-		public bool Generate(int teamsPerMatch, int teamCount, int locationCount, int maxRoundCount = 0)
+		public bool Generate(int teamsPerGame, int teamCount, int locationCount, int maxRoundCount = 0)
 		{
-			Match.TeamsPerMatch = teamsPerMatch;
+			Game.TeamsPerGame = teamsPerGame;
 			Teams.Clear();
 			Locations.Clear();
 			Rounds.Clear();
 			_maxRoundCount = maxRoundCount;
-			MatchesRequired = 0;
+			GamesRequired = 0;
 
 			for (int i = 0; i < teamCount; ++i)
 			{
-				MatchesRequired += i;
+				GamesRequired += i;
 				Teams.Add(new Team(i.ToString()));
 			}
 
@@ -61,8 +60,8 @@ namespace RoundRobinConsole
 			}
 
 			//GenerateRecursive();
-
-			var rounds = EnumerateRounds();
+			var games = EnumerateGames();
+			var rounds = EnumerateRounds(games);
 
 			return true;
 		}
@@ -82,9 +81,8 @@ namespace RoundRobinConsole
 			return games;
 		}
 
-		public List<uint> EnumerateRounds()
+		public List<uint> EnumerateRounds(List<uint> games)
 		{
-			var games = EnumerateGames();
 			var possibleGameCount = games.Count;
 			List<uint> rounds = new List<uint>();
 			for (int i = 0; i < possibleGameCount; ++i)
@@ -187,56 +185,56 @@ namespace RoundRobinConsole
 		//	return possibleRounds;
 		//}
 
-		public void EnumerateMatches(List<uint> games)
-		{
-			var gamesCopy = new List<uint>(games);
-			var match = 0u;
-			EnumerateMatchesRecursive(ref match, gamesCopy, 3, 0);
-		}
+		//public void EnumerateGames2(List<uint> games)
+		//{
+		//	var gamesCopy = new List<uint>(games);
+		//	var game = 0u;
+		//	EnumerateGamesRecursive2(ref game, gamesCopy, 3, 0);
+		//}
 
-		public void EnumerateMatchesRecursive(ref uint match, List<uint> games, int maxDepth, int depth)
-		{
-			if (depth >= maxDepth)
-			{
-				return;
-			}
-			//List<uint> games = new List<uint>();
-			for (int i = depth; i < maxDepth; ++i)
-			{
-				uint game = 1u << i;
-				games.Add(game);
-			}
-		}
+		//public void EnumerateGamesRecursive2(ref uint game, List<uint> games, int maxDepth, int depth)
+		//{
+		//	if (depth >= maxDepth)
+		//	{
+		//		return;
+		//	}
+		//	//List<uint> games = new List<uint>();
+		//	for (int i = depth; i < maxDepth; ++i)
+		//	{
+		//		uint game = 1u << i;
+		//		games.Add(game);
+		//	}
+		//}
 
-		public bool GenerateRecursive()
-		{
-			if (GenerateRecursive())
-			{
-				return true;
-			}
+		//public bool GenerateRecursive()
+		//{
+		//	if (GenerateRecursive())
+		//	{
+		//		return true;
+		//	}
 
-			/*
-			if number of matches for each team is the required number and the total is the required number -> algorithm done, return true.
-			have a list of teams for this round.
-			have a list of all byes for all rounds.
-			when the bye list contains all teams, start a new bye list.
-			make the first teams on the list be the team that had a bye in the previous round
-			shuffle the list except the previous byes at the front.
-			make matches in order
-			    pull two teams out, put them in a match, pull the next two out, etc. until all locations have a match.
-			verify that conditions are met
-			put the new round in the round list.
-			generate another round
-			//*/
+		//	/*
+		//	if number of games for each team is the required number and the total is the required number -> algorithm done, return true.
+		//	have a list of teams for this round.
+		//	have a list of all byes for all rounds.
+		//	when the bye list contains all teams, start a new bye list.
+		//	make the first teams on the list be the team that had a bye in the previous round
+		//	shuffle the list except the previous byes at the front.
+		//	make games in order
+		//	    pull two teams out, put them in a game, pull the next two out, etc. until all locations have a game.
+		//	verify that conditions are met
+		//	put the new round in the round list.
+		//	generate another round
+		//	//*/
 
-			return false;
-		}
+		//	return false;
+		//}
 	}
 
 	public class Round
 	{
 		public int RoundNumber;
-		public List<Match> Matches = new List<Match>();
+		public List<Game> Games = new List<Game>();
 
 		public Round(int roundNumber)
 		{
@@ -247,36 +245,36 @@ namespace RoundRobinConsole
 		{
 			var sb = new StringBuilder();
 			sb.Append($"Round {RoundNumber}:");
-			foreach (var match in Matches)
+			foreach (var game in Games)
 			{
 				sb.Append($"\t");
-				sb.Append(match.GetMatchString());
+				sb.Append(game.GetGameString());
 				sb.AppendLine();
 			}
 			return sb.ToString();
 		}
 	}
 
-	public interface IMatch
+	public interface IGame
 	{
-		public string GetMatchString();
+		public string GetGameString();
 	}
 
-	public class Match : IMatch
+	public class Game : IGame
 	{
-		public static int TeamsPerMatch = 2;
+		public static int TeamsPerGame = 2;
 		public List<Team> Teams = new List<Team>();
 		public Location Location;
 
-		public Match(List<Team> teams, Location location)
+		public Game(List<Team> teams, Location location)
 		{
 			Debug.Assert(teams != null);
-			Debug.Assert(teams.Count == TeamsPerMatch);
+			Debug.Assert(teams.Count == TeamsPerGame);
 			Teams = teams;
 			Location = location;
 		}
 
-		public string GetMatchString()
+		public string GetGameString()
 		{
 			var sb = new StringBuilder();
 
@@ -295,13 +293,38 @@ namespace RoundRobinConsole
 
 			return sb.ToString();
 		}
+
+		/// <summary>
+		/// Do the games have the same teams?
+		/// Not exactly an equals check becuase it ignores the team order.
+		/// So team 1 playing team 2 is the same as team 2 playing team 1.
+		/// </summary>
+		/// <param name="other"></param>
+		/// <returns><see langword="true"/> if the two games contain the same teams. <see langword="false"/> otherwise.</returns>
+		public bool Matches(Game other)
+		{
+			if (Teams.Count != other.Teams.Count)
+			{
+				return false;
+			}
+
+			foreach (var team in Teams)
+			{
+				if (!other.Teams.Contains(team))
+				{
+					return false;
+				}
+			}
+
+			return true;
+		}
 	}
 
-	public class Bye : IMatch
+	public class Bye : IGame
 	{
 		public List<Team> Teams = new List<Team>();
 
-		public string GetMatchString()
+		public string GetGameString()
 		{
 			var sb = new StringBuilder();
 
