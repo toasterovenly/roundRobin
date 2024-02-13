@@ -4,7 +4,7 @@ namespace RoundRobinConsole
 {
 	public class Bye : IGame
 	{
-		public List<Team> Teams = new List<Team>();
+		public List<Team> Teams { get; set; } = new List<Team>();
 
 		public string GetGameString()
 		{

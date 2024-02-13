@@ -6,7 +6,7 @@ namespace RoundRobinConsole
 	public class Game : IGame
 	{
 		public static int TeamsPerGame = 2;
-		public List<Team> Teams = new List<Team>();
+		public List<Team> Teams { get; set; } = new List<Team>();
 		public Location Location;
 
 		public Game(List<Team> teams, Location location)
