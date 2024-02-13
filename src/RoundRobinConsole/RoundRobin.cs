@@ -1,4 +1,7 @@
-﻿namespace RoundRobinConsole
+﻿using System.Collections;
+using RoundRobinConsole.Extensions;
+
+namespace RoundRobinConsole
 {
 	public class RoundRobin
 	{
@@ -24,86 +27,118 @@
 		public bool Generate(int teamsPerGame, int teamCount, int locationCount, int maxRoundCount = 0)
 		{
 			Game.TeamsPerGame = teamsPerGame;
-			Teams.Clear();
-			Locations.Clear();
 			Rounds.Clear();
 			_maxRoundCount = maxRoundCount;
 			GamesRequired = 0;
 
-			for (int i = 0; i < teamCount; ++i)
-			{
-				GamesRequired += i;
-				Teams.Add(new Team(i.ToString()));
-			}
+			CreateTeams(teamCount);
+			CreateLocations(locationCount);
 
-			char letterA = 'A';
-			for (byte b = 0; b < locationCount; ++b)
-			{
-				var locationLetter = (char)(letterA + b);
-				Locations.Add(new Location(locationLetter.ToString()));
-			}
-
-			//GenerateRecursive();
 			var games = EnumerateGames();
 			var rounds = EnumerateRounds(games);
 
 			return true;
 		}
 
-		public List<uint> EnumerateGames()
+		private void CreateTeams(int teamCount)
 		{
-			List<uint> games = new List<uint>();
+			Teams.Clear();
+
+			for (int i = 0; i < teamCount; ++i)
+			{
+				GamesRequired += i;
+				var team = new Team();
+				Teams.Add(team);
+				Console.WriteLine($"Team {Teams.Count}: {team.Name}");
+			}
+		}
+
+		private void CreateLocations(int locationCount)
+		{
+			Locations.Clear();
+
+			char letterA = 'A';
+			for (int i = 0; i < locationCount; ++i)
+			{
+				var locationLetter = (char)(letterA + i);
+				var location = new Location(locationLetter.ToString());
+				Locations.Add(location);
+				Console.WriteLine($"Location {Locations.Count}: {location.Name}");
+			}
+		}
+
+		public List<BitArray> EnumerateGames()
+		{
+			var gameBitArrays = new List<BitArray>();
 			for (int i = 0; i < _teamCount; ++i)
 			{
 				for (int j = i + 1; j < _teamCount; ++j)
 				{
-					uint game = 1u << i | 1u << j;
-					games.Add(game);
-					Console.WriteLine($"Game {games.Count}: {game.ToString($"B{_teamCount}")}");
+					// for logging
+					var teamIndices = new List<int>() { i, j };
+					var game = new Game(teamIndices, Teams, Locations[0]);
+					Console.WriteLine($"Game {gameBitArrays.Count}: {game.GetGameString()}");
+					// for logging
+
+					var gameBitArray = new BitArray(_teamCount);
+					gameBitArray.Set(i, true);
+					gameBitArray.Set(j, true);
+					gameBitArrays.Add(gameBitArray);
+
+					//Console.WriteLine($"Game {gameBitArrays.Count}: {gameBitArray.ToStringTeams(Teams)}");
+					//Console.WriteLine($"Game {gameBitArrays.Count}: {gameBitArray.ToStringBools()}");
 				}
 			}
-			return games;
+			return gameBitArrays;
 		}
 
-		public List<uint> EnumerateRounds(List<uint> games)
+		public List<BitArray> EnumerateRounds(List<BitArray> gameBitArrays)
 		{
-			var possibleGameCount = games.Count;
-			List<uint> rounds = new List<uint>();
+			var possibleGameCount = gameBitArrays.Count;
+			var roundBitArrays = new List<BitArray>();
 			for (int i = 0; i < possibleGameCount; ++i)
 			{
 				for (int j = i + 1; j < possibleGameCount; ++j)
 				{
-					if ((games[i] & games[j]) != 0)
+					if (gameBitArrays[i].And(gameBitArrays[j]).HasAnySet())
 					{
 						continue;
 					}
 					for (int k = j + 1; k < possibleGameCount; ++k)
 					{
-						if ((games[i] & games[k] & games[k]) != 0)
+						if (
+							gameBitArrays[i].And(gameBitArrays[k]).HasAnySet()
+							|| gameBitArrays[j].And(gameBitArrays[k]).HasAnySet()
+						)
 						{
 							continue;
 						}
-						uint round = 1u << i | 1u << j | 1u << k;
-						rounds.Add(round);
-						Console.WriteLine($"Round {rounds.Count}: {round.ToString($"B{possibleGameCount}")}");
+
+						var roundBitArray = new BitArray(possibleGameCount);
+						roundBitArray.Set(i, true);
+						roundBitArray.Set(j, true);
+						roundBitArray.Set(k, true);
+						roundBitArrays.Add(roundBitArray);
+						Console.WriteLine($"Round {roundBitArrays.Count}: {roundBitArray.ToIndices().ToStringNice()}");
 					}
 				}
 			}
 
-			var resultRounds = new List<uint>();
-			EnumerateRoundsRecursive(resultRounds, rounds, 0u, 0, 0, games.Count - 1);
+			var resultRounds = new List<BitArray>();
+			var currentRound = new BitArray(possibleGameCount);
+			EnumerateRoundsRecursive(resultRounds, roundBitArrays, currentRound, 0, 0, gameBitArrays.Count - 1);
 			for (int i = 0; i < resultRounds.Count; ++i)
 			{
-				Console.WriteLine($"Rounds {i}: {resultRounds[i].ToString($"B{rounds.Count}")}");
+				Console.WriteLine($"Rounds {i}: {resultRounds[i].ToIndices().ToStringNice()}");
 			}
 
-			return rounds;
+			return roundBitArrays;
 		}
 
 		public bool EnumerateRoundsRecursive(
-			List<uint> resultRounds,
-			List<uint> possibleRounds,
-			uint currentRound,
+			List<BitArray> resultRounds,
+			List<BitArray> possibleRounds,
+			BitArray currentRound,
 			int roundIndex,
 			int roundCount,
 			int maxRoundCount
@@ -117,12 +152,12 @@
 
 			for (int i = roundIndex; i < possibleRounds.Count; ++i)
 			{
-				if ((currentRound & possibleRounds[i]) != 0)
+				if (currentRound.And(possibleRounds[i]).HasAnySet())
 				{
 					continue;
 				}
 
-				var roundsBits = currentRound | possibleRounds[i];
+				var roundsBits = currentRound.Or(possibleRounds[i]);
 				EnumerateRoundsRecursive(
 					resultRounds,
 					possibleRounds,
